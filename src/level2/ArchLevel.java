@@ -10,6 +10,8 @@ import dk.itu.mario.engine.sprites.SpriteTemplate;
 import dk.itu.mario.engine.sprites.Enemy;
 import Architect.*;
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.stat.correlation.Covariance;
 
 public class ArchLevel extends Level{
@@ -20,8 +22,9 @@ public class ArchLevel extends Level{
 	public   int BLOCKS_COINS = 0; // the number of coin blocks
 	public   int BLOCKS_POWER = 0; // the number of power blocks
 	public   int COINS = 0; //These are the coins in boxes that Mario collect
-
-
+	
+	public double [] means = {10,10,6,3,25,9};//means for normal distribution
+	
 	private static Random levelSeedRandom = new Random();
 	public static long lastSeed;
 
@@ -82,25 +85,27 @@ public class ArchLevel extends Level{
 		MAX_COINS = m.MAX_COINS * 10;
 		//GAP_SIZE = m.GAP_SIZE;
 		// MAX_TURTLES = m.MAX_TURTLES;
-		double[][] data = {	{recorder.dg(),recorder.kT()},
-							{recorder.dg()+1, recorder.kT()+1},	
-						};
-		double [] means = {10,10,6,3,25,9};
+		
+		
+		System.out.println("test stuff:");
+		means[ODDS_CANNONS] += recorder.getKills(SpriteTemplate.CANNON_BALL) -1*recorder.getDeaths(SpriteTemplate.CANNON_BALL);//todo get kill ratio instead of kills
 
-		double [][]cov = 		{	{1,0,0,0,0,0},
-									{0,1,0,0,0,0},
-									{0,0,1,0,0,0},
-									{0,0,0,1,0,0},
-									{0,0,0,0,1,0},
-									{0,0,0,0,0,1}};
-		Covariance cov2 = new Covariance(data);
-		System.out.println("aaaaaaaa");
+
+		double [][]cov = 		{	{10,0,0,0,0,0},
+									{0,10,0,0,0,0},
+									{0,0,16,0,0,0},
+									{0,0,0,3,0,0},
+									{0,0,0,0,25,0},
+									{0,0,0,0,0,9}};
+		RealMatrix matrix = new Array2DRowRealMatrix(cov);
+		Covariance cov2 = new Covariance(cov);
 		System.out.println(Arrays.deepToString(cov2.getCovarianceMatrix().getData()));
-
+		System.out.println(Arrays.deepToString(matrix.getData()));
+		
 		MultivariateNormalDistribution MND = new MultivariateNormalDistribution(means,cov);
 
 		double[] odds_sample = MND.sample();
-
+		System.out.println(Arrays.toString(odds_sample));
 		odds[ODDS_STRAIGHT] = (int) odds_sample[ODDS_STRAIGHT];
 		odds[ODDS_HILL_STRAIGHT] = (int) odds_sample[ODDS_HILL_STRAIGHT];
 		odds[ODDS_TUBES] =(int) odds_sample[ODDS_TUBES];
