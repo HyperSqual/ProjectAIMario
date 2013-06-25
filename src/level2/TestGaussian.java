@@ -22,6 +22,23 @@ public class TestGaussian {
 			return newarray;
 			
 	}
+	
+	public static double[] arrayMeans(double[][] array)
+	{	
+		double[] means = new double[array[0].length];
+		for (int i = 0; i < array.length;i++)
+		{
+			for(int j = 0; j <array[i].length;j++ )
+			{
+				means[j] += array[i][j];
+			}
+		}
+		for (int i = 0; i< means.length;i++)
+		{
+			means[i] = means[i]/array.length;
+		}
+		return means;
+	}
 
 	public static void main(String[] args)
     {
@@ -30,8 +47,9 @@ public class TestGaussian {
 		  double [][]cov = 			{{9,0,0},
 				 					{0,4,0},
 		 							{0,0,4}};
-
-		 double [][]covplus = addToArray(cov,means);
+		  double [][]covv = {{1,2,3}};
+		 double [][]covplus = addToArray(covv,means);
+		 System.out.println(Arrays.toString(arrayMeans(covplus)));
 		 System.out.println(Arrays.deepToString(covplus));
 		  double [][] meansmeans = {means,means}; 
 		  Covariance cov2 = new Covariance(cov);
