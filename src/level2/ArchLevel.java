@@ -104,7 +104,7 @@ public class ArchLevel extends Level{
 		// MAX_TURTLES = m.MAX_TURTLES;
 
 		double [] means = arrayMeans(valueList);//{10,10,6,3,25,9};//means for normal distribution
-		
+		System.out.println(Arrays.toString(means));
 		
 		System.out.println("test stuff:");
 //		means[ODDS_STRAIGHT] += 1-recorder.tr();
@@ -113,19 +113,25 @@ public class ArchLevel extends Level{
 //		means[ODDS_JUMP] += recorder.J()-recorder.dg();
 //		means[ODDS_CANNONS] += recorder.getKills(SpriteTemplate.CANNON_BALL)-recorder.getDeaths(SpriteTemplate.CANNON_BALL);//todo get kill ratio instead of kills
 
-		double [][]cov = 		{	{means[0],0,0,0,0},
-									{0,means[1],0,0,0},
-									{0,0,means[2],0,0},
-									{0,0,0,means[3],0},
-									{0,0,0,0,means[4]}};
+//		double [][]cov = 		{	{means[0],0,0,0,0},
+//									{0,means[1],0,0,0},
+//									{0,0,means[2],0,0},
+//									{0,0,0,means[3],0},
+//									{0,0,0,0,means[4]}};
 		//System.out.printf("%d,%d",valueList.length,valueList[0].length);
 		RealMatrix matrix = new Array2DRowRealMatrix(valueList);
 
-		Covariance cov2 = new Covariance();
+		Covariance covM = new Covariance(matrix,true);
+		double[][] covdouble = covM.getCovarianceMatrix().getData();
+		covdouble[0][0] += 3;
+		covdouble[1][1] += 3;
+		covdouble[2][2] += 3;
+		covdouble[3][3] += 3;
+		covdouble[4][4] += 3;
 		//System.out.println(Arrays.deepToString(cov2.getCovarianceMatrix().getData()));
-		System.out.println(Arrays.deepToString(matrix.getData()));
+		System.out.println(Arrays.deepToString(covdouble));//matrix.getData()));
 		
-		MultivariateNormalDistribution MND = new MultivariateNormalDistribution(means,cov);//cov2.getCovarianceMatrix().getData());
+		MultivariateNormalDistribution MND = new MultivariateNormalDistribution(means,covdouble);//cov2.getCovarianceMatrix().getData());
 
 		double[] odds_sample = MND.sample();
 		System.out.println(Arrays.toString(odds_sample));

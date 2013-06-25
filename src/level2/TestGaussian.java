@@ -44,23 +44,38 @@ public class TestGaussian {
     {
 		  double [] means = {1,1,1};
 		 
-		  double [][]cov = 			{{9,0,0},
-				 					{0,4,0},
-		 							{0,0,4}};
+		  double [][]cov = 			{{9,3,1},
+				 					{8,4,2},
+		 							{9,3,1}};
+		  double [][]cov3 = {
+				  {4,2,0.6},
+				  {4.2,2.1,0.59},
+				  {3.9,2.0,0.58},
+				  {4.3,2.1,0.62},
+				  {4.1,2.2,0.63}
+		  };
 		  double [][]covv = {{1,2,3}};
-		 double [][]covplus = addToArray(covv,means);
+		  double [][]covplus = addToArray(covv,means);
+		  covplus = addToArray(covplus,means);
+		  covplus = addToArray(covplus,means);
+		  covplus = addToArray(covplus,means);
 		 System.out.println(Arrays.toString(arrayMeans(covplus)));
 		 System.out.println(Arrays.deepToString(covplus));
 		  double [][] meansmeans = {means,means}; 
-		  Covariance cov2 = new Covariance(cov);
+		  Covariance cov2 = new Covariance(cov3,false);
 		  RealMatrix matrix = new Array2DRowRealMatrix(cov);
 			
 			//Covariance cov2 = new Covariance(cov);
 			System.out.println("aaaaaaaa");
 			System.out.println(Arrays.deepToString(cov2.getCovarianceMatrix().getData()));
+			double[][] cov2double = cov2.getCovarianceMatrix().getData();
+			cov2double[0][0] = 10;
+			cov2double[1][1] = 10;
+			cov2double[2][2] = 10;
+			
 			
 			System.out.println(Arrays.deepToString(matrix.getData()));
-		  MultivariateNormalDistribution MND = new MultivariateNormalDistribution(means,cov);//2.getCovarianceMatrix().getData());//cov2.getCovarianceMatrix().getData());
+		  MultivariateNormalDistribution MND = new MultivariateNormalDistribution(means,cov2double);//cov2.getCovarianceMatrix().transpose().getData());//cov2.getCovarianceMatrix().getData());
 		  
 		  System.out.println(Arrays.toString(MND.getStandardDeviations()));
 		  double[][] kaas = MND.sample(10);
