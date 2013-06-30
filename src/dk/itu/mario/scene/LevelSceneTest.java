@@ -54,9 +54,12 @@ public class LevelSceneTest extends LevelScene{
 	private int point = -1;
 	private int []checkPoints;
 	private boolean isCustom;
-
-	public double [][] valueList = {{10,10,6,3,25}};
-
+	
+	public double [] startVector = {10,10,6,3,25};
+	public ArrayList<double[]> valueArrayList = new ArrayList(0);//will contain the playvectors, no doubles
+	public ArrayList<double[]> rewardList = new ArrayList(0);
+	public double [][] valueList = {startVector};//means of the gaussians, will contain all playvectors created
+	
 	public boolean recording = false;
 	public boolean l2 = true;
 	public boolean l3 = false;
@@ -245,7 +248,8 @@ public class LevelSceneTest extends LevelScene{
 		arch = new Architect();
 		arch.updateMessage();
 		m = new ARCH_MESSAGE();
-
+		
+		valueArrayList.add(startVector);
 		//Track planned difficuly levels for each level segment
 		currentLevelSegment = 0;
 		nextSegmentAlreadyGenerated = false;
@@ -427,7 +431,6 @@ public class LevelSceneTest extends LevelScene{
 		//double prob_appr_1_given_obs = (prob_obs_given_appr_1 * prior_appropriateness) / prob_obs;
 		double prob_appr_0_given_obs = ( prob_obs_given_appr_0 * prior_appropriateness ) / ( prob_obs_given_appr_0 * prior_appropriateness + prob_obs_given_appr_1  * prior_appropriateness);
 		double prob_appr_1_given_obs = ( prob_obs_given_appr_1 * prior_appropriateness ) / ( prob_obs_given_appr_1 * prior_appropriateness + prob_obs_given_appr_0  * prior_appropriateness);
-
 		//Verbose output
 		if (verbose) {
 			System.out.println("");
@@ -1191,10 +1194,98 @@ public class LevelSceneTest extends LevelScene{
 		 */
 	}
 	
+	public void updateReward2(Instance selectedInstance, boolean doBernoulliRewards, boolean isTrainingInstance, boolean verbose)
+	{                          
+		//Update reward in the vector playerModel[]
+		if (verbose) System.out.println("");
+		if (verbose) System.out.println("updateReward called()");
+
+		//Determine difficulty level associated to this instance
+		double [] playVector = valueList[valueList.length-1];//get last vector used
+
+		if (verbose) System.out.println("-calculating reward for previous level segment play vector: " + Arrays.toString(playVector) );
+		//double probsAppro = getProbsAppropriateness_ObservationStr(observation_str, false);
+		double probsAppro = classifyInstance(selectedInstance, false);                           
+		if (verbose) System.out.println("-difficulty of play vector was deemed appropriate with a probability of: " + probsAppro );
+
+		//Determine rewards according to Bernoulli scheme / proportional reward
+		double reward = 0.0;
+		if (doBernoulliRewards) {
+			if (verbose) System.out.println("-returning reward of 1 with probablity of " + probsAppro + ", else reward of 0 (Bernoulli rewards)");
+			boolean returnBernoulliReward;
+			if ( Math.random() <= probsAppro ) returnBernoulliReward = true;
+			else returnBernoulliReward = false;
+
+			if (verbose) System.out.println("-boolean returnBernoulliReward: " + returnBernoulliReward);
+			if (returnBernoulliReward) reward = 1.0;
+			else reward = 0.0;                                
+		}
+		else {
+			if (verbose) System.out.println("-returning reward " + probsAppro + " (regular non-Bernoulli rewards)");
+			reward = probsAppro;
+		}
+
+		if (verbose) System.out.println("-adding reward of " + reward + " to play vector" + Arrays.toString(playVector));
+		
+		addRewardToList(playVector, reward);//adding to rewardList and ValueArrayList
+		//Note, updating the display of average rewards is performed by updatePlayerModel()
+		//int index = getPlayerModelIndex(difficultyLevel);
+		//System.out.println("-updating playerModel[" + index + "] with reward: " + reward);
+		//playerModel[index] += reward;
+		if (verbose) System.out.println("-done");
+
+		//OLD
+		//Increase reward proportionally to appropriateness of current difficulty level to the specific player
+		//As determed by probabilities in player model
+		/*
+                            System.out.println("");
+                            System.out.println("updateReward called()");
+                            double reward = getPlayerModelElement(m.DIFFICULTY);
+                            System.out.println("-increasing reward by: " + reward);
+                            m.REWARD += reward;
+                            System.out.println("-new reward is now: " + m.REWARD);
+		 */
+
+		//OLD OLD
+		/*
+                            if (m.state == 1) { //SANDER UPDATE - NOT CORRECT AT THE MOMENT
+                                //Appropriate difficulty - Increase reward
+                                int rangeMin = 0;
+                                int rangeMax = 1;
+                                Random r = new Random();
+                                double randomValue = rangeMin + (rangeMax - rangeMin) * r.nextDouble();
+                                System.out.println("Increasing reward by: " + randomValue);
+                                m.REWARD += randomValue;
+                                System.out.println("New cummulative reward: " + m.REWARD);
+                            }
+                            else {
+                                //No appropriate difficulty - Do not increase reward for this level block
+                                m.REWARD += 0;                              
+                            }
+		 */
+	}
+	
+	private void addRewardToList(double[] playVector, double reward) {
+		if (valueArrayList.contains(playVector))//if it's already been added before, append the reward
+		{
+			int index = valueArrayList.indexOf(playVector);
+			double[] rewards = rewardList.get(index);
+			rewards = Arrays.copyOf(rewards,rewards.length+1);
+			rewards[rewards.length-1] = reward;
+			rewardList.set(index, rewards);
+		}
+		else								//if it isn't, add both the vector and the reward
+		{
+			valueArrayList.add(playVector);
+			double [] rewardArray =  {reward};
+			rewardList.add(rewardArray);
+		}
+		
+	}
+
 	public static double [][] addToArray(double [][] array, double [] element)//small method to add array to array of arrays
 	{
 		double [][] newarray = new double [array.length+1][array[0].length];
-		
 		for (int i = 0;i < array.length;i++)
 		{	
 			newarray[i] = array[i];
@@ -1315,12 +1406,14 @@ public class LevelSceneTest extends LevelScene{
 				
 				//update playervalues
 				double[] newPlayValues = this.valueList[this.valueList.length-1].clone();
-				newPlayValues[0] += 1-recorder.tr();
-				newPlayValues[1] += 1-recorder.tr();
+				newPlayValues[0] += -0.5+recorder.tr();
+				newPlayValues[1] += 0.5-recorder.tr();
 				newPlayValues[2] += recorder.getKills(SpriteTemplate.CHOMP_FLOWER)-recorder.getDeaths(SpriteTemplate.CHOMP_FLOWER);
 				newPlayValues[3] += recorder.J()-recorder.dg();
 				newPlayValues[4] += recorder.getKills(SpriteTemplate.CANNON_BALL)-recorder.getDeaths(SpriteTemplate.CANNON_BALL);//todo get kill ratio instead of kills
 				this.valueList = addToArray(this.valueList, newPlayValues);
+				//valueArrayList.add(newPlayValues);//add it to the arrayList too
+				updateReward2(testInstance, doBernoulliRewards, isTrainingInstance, verbose);//update rewards to gaussian vectors
 				System.out.println(Arrays.deepToString(valueList));
 
 				//Determine next action
