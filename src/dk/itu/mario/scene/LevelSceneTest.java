@@ -58,7 +58,10 @@ public class LevelSceneTest extends LevelScene{
 	public double [] startVector = {10,10,6,3,25};
 	public ArrayList<double[]> valueArrayList = new ArrayList(0);//will contain the playvectors, no doubles
 	public ArrayList<double[]> rewardList = new ArrayList(0);
+	public double[] vectorModel = new double[0];//appropriateness for vectors values
 	public double [][] valueList = {startVector};//means of the gaussians, will contain all playvectors created
+	private int newVectorInterval = 1;
+	private int newVectorCount = 0;
 	
 	public boolean recording = false;
 	public boolean l2 = true;
@@ -221,6 +224,7 @@ public class LevelSceneTest extends LevelScene{
 
 
 	Architect arch;
+
 
 	public LevelSceneTest(GraphicsConfiguration graphicsConfiguration,
 			MarioComponent renderer, long seed, int levelDifficulty, int type, boolean isCustom){
@@ -1198,16 +1202,16 @@ public class LevelSceneTest extends LevelScene{
 	{                          
 		//Update reward in the vector playerModel[]
 		if (verbose) System.out.println("");
-		if (verbose) System.out.println("updateReward called()");
-
+		if (verbose) System.out.println("updateReward2 called()");
+	
 		//Determine difficulty level associated to this instance
-		double [] playVector = valueList[valueList.length-1];//get last vector used
-
+		double [] playVector = valueList[valueList.length-1].clone();//get last vector used
+	
 		if (verbose) System.out.println("-calculating reward for previous level segment play vector: " + Arrays.toString(playVector) );
 		//double probsAppro = getProbsAppropriateness_ObservationStr(observation_str, false);
-		double probsAppro = classifyInstance(selectedInstance, false);                           
+		double probsAppro = classifyInstance(selectedInstance, false);     
 		if (verbose) System.out.println("-difficulty of play vector was deemed appropriate with a probability of: " + probsAppro );
-
+	
 		//Determine rewards according to Bernoulli scheme / proportional reward
 		double reward = 0.0;
 		if (doBernoulliRewards) {
@@ -1215,7 +1219,7 @@ public class LevelSceneTest extends LevelScene{
 			boolean returnBernoulliReward;
 			if ( Math.random() <= probsAppro ) returnBernoulliReward = true;
 			else returnBernoulliReward = false;
-
+	
 			if (verbose) System.out.println("-boolean returnBernoulliReward: " + returnBernoulliReward);
 			if (returnBernoulliReward) reward = 1.0;
 			else reward = 0.0;                                
@@ -1224,51 +1228,90 @@ public class LevelSceneTest extends LevelScene{
 			if (verbose) System.out.println("-returning reward " + probsAppro + " (regular non-Bernoulli rewards)");
 			reward = probsAppro;
 		}
-
+	
 		if (verbose) System.out.println("-adding reward of " + reward + " to play vector" + Arrays.toString(playVector));
 		
 		addRewardToList(playVector, reward);//adding to rewardList and ValueArrayList
 		//Note, updating the display of average rewards is performed by updatePlayerModel()
 		//int index = getPlayerModelIndex(difficultyLevel);
-		//System.out.println("-updating playerModel[" + index + "] with reward: " + reward);
+		System.out.println("-updating vectorModel[" + Arrays.toString(playVector) + "] with reward: " + reward);
 		//playerModel[index] += reward;
 		if (verbose) System.out.println("-done");
+	
+	}
 
-		//OLD
-		//Increase reward proportionally to appropriateness of current difficulty level to the specific player
-		//As determed by probabilities in player model
-		/*
-                            System.out.println("");
-                            System.out.println("updateReward called()");
-                            double reward = getPlayerModelElement(m.DIFFICULTY);
-                            System.out.println("-increasing reward by: " + reward);
-                            m.REWARD += reward;
-                            System.out.println("-new reward is now: " + m.REWARD);
-		 */
+	public double[] setVectorAction() {
+	       //Select the next action using the accumulated rewards as given in the player models
+	       //Now: select according to softMax probabilities
+	       System.out.println("");
+	       System.out.println("setVectorAction() called...");
+	       //String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+	       //System.out.println("setAction() called at " + timeStamp + "...");
 
-		//OLD OLD
-		/*
-                            if (m.state == 1) { //SANDER UPDATE - NOT CORRECT AT THE MOMENT
-                                //Appropriate difficulty - Increase reward
-                                int rangeMin = 0;
-                                int rangeMax = 1;
-                                Random r = new Random();
-                                double randomValue = rangeMin + (rangeMax - rangeMin) * r.nextDouble();
-                                System.out.println("Increasing reward by: " + randomValue);
-                                m.REWARD += randomValue;
-                                System.out.println("New cummulative reward: " + m.REWARD);
-                            }
-                            else {
-                                //No appropriate difficulty - Do not increase reward for this level block
-                                m.REWARD += 0;                              
-                            }
-		 */
+	       //Determine the softMax temperature on the basis of the probability of user abandonment
+	       double abandonmentProbability = getAbandonmentProbability();
+	       softMax_temperature = (1 - abandonmentProbability);
+	       System.out.println("-probability of abandonment: " + abandonmentProbability );
+	       System.out.println("-calling softmax with temperature of: " + softMax_temperature);
+	       
+	       //Select action according to softMax probabilities
+	       double[] softmaxProbs = softmax(this.vectorModel);
+	       for (int i = 0; i < softmaxProbs.length;i++)
+	       {
+	    	   String vector = Arrays.toString(valueArrayList.get(i));
+	    	   System.out.println("-probability of vector "+vector+" (with average accumulated reward " + this.vectorModel[i] + ") being selected is: " + softmaxProbs[0]);
+   
+	       }
+	      
+	       double p = Math.random();
+	       double cumulativeProbability = 0.0;
+	       double[] selectedAction = new double[valueArrayList.get(0).length];
+	       for (int i = 0; i < softmaxProbs.length; i++) {
+	           cumulativeProbability += softmaxProbs[i];
+	           if (p <= cumulativeProbability) {
+	               selectedAction = valueArrayList.get(i);
+	               break;
+	           }
+	       }
+	       //selectedAction = selectedAction * 3 + 1; //convert to 1,4,7 difficulty scale
+	       //m.bestAction = selectedAction * 3 + 1; //convert to 1,4,7 difficulty scale;
+	       //System.out.println("-selected action is: " + m.bestAction);
+	       return selectedAction;
+
+	}
+	
+	public void updateVectorModel()
+	{
+		double [] newVectorModel = new double[this.rewardList.size()];
+		for(int i = 0;i < this.rewardList.size();i++)
+		{
+			double[] rewards = this.rewardList.get(i);
+			if (rewards.length > 1)
+			{
+				double average = 0;
+				for(int j = 0; j< rewards.length;j++)
+				{
+					average += rewards[j];
+				}
+				average /= rewards.length;
+				newVectorModel[i] = average;
+			}
+			else
+			{
+				newVectorModel[i] = rewards[0];
+			}
+		}
+		this.vectorModel = newVectorModel;
 	}
 	
 	private void addRewardToList(double[] playVector, double reward) {
-		if (valueArrayList.contains(playVector))//if it's already been added before, append the reward
-		{
-			int index = valueArrayList.indexOf(playVector);
+		int index = deepContainsArray(valueArrayList,playVector);
+		if (index != -1)//if it's already been added before, append the reward
+		{	System.out.println(Arrays.deepToString(valueArrayList.toArray()));
+			System.out.println(Arrays.toString(playVector));
+			System.out.println(reward);
+			//int index = valueArrayList.indexOf(playVector);
+			System.out.println(index);
 			double[] rewards = rewardList.get(index);
 			rewards = Arrays.copyOf(rewards,rewards.length+1);
 			rewards[rewards.length-1] = reward;
@@ -1281,6 +1324,16 @@ public class LevelSceneTest extends LevelScene{
 			rewardList.add(rewardArray);
 		}
 		
+	}
+	
+	public int deepContainsArray(ArrayList<double[]> arraylist, double[] element)
+	{
+		for (int i = 0; i<arraylist.size();i++)
+		{
+			if(Arrays.equals(arraylist.get(i), element))
+			return i;
+		}
+		return -1;
 	}
 
 	public static double [][] addToArray(double [][] array, double [] element)//small method to add array to array of arrays
@@ -1400,20 +1453,33 @@ public class LevelSceneTest extends LevelScene{
 				boolean doBernoulliRewards = false;
 				boolean isTrainingInstance = false;
 				boolean verbose = true;
-				updateReward(testInstance, doBernoulliRewards, isTrainingInstance, verbose); //update reward in playerModelDiff1,4,7
+				//updateReward(testInstance, doBernoulliRewards, isTrainingInstance, verbose); //update reward in playerModelDiff1,4,7
 				updatePlayerModel();
 				displayReceivedRewards();
 				
 				//update playervalues
 				double[] newPlayValues = this.valueList[this.valueList.length-1].clone();
-				newPlayValues[0] += -0.5+recorder.tr();
-				newPlayValues[1] += 0.5-recorder.tr();
-				newPlayValues[2] += recorder.getKills(SpriteTemplate.CHOMP_FLOWER)-recorder.getDeaths(SpriteTemplate.CHOMP_FLOWER);
-				newPlayValues[3] += recorder.J()-recorder.dg();
-				newPlayValues[4] += recorder.getKills(SpriteTemplate.CANNON_BALL)-recorder.getDeaths(SpriteTemplate.CANNON_BALL);//todo get kill ratio instead of kills
+				if (this.newVectorCount == this.newVectorInterval)//only select old vector if interval requirment is met
+				{
+					this.newVectorCount =0;
+					newPlayValues = setVectorAction();//get vector with softmax
+				}
+				else
+				{	
+					this.newVectorCount += 1; //a new vector is added
+					newPlayValues[0] += -0.5+recorder.tr();
+					newPlayValues[1] += 0.5-recorder.tr();
+					newPlayValues[2] += recorder.getKills(SpriteTemplate.CHOMP_FLOWER)-recorder.getDeaths(SpriteTemplate.CHOMP_FLOWER);
+					newPlayValues[3] += recorder.J()-recorder.dg();
+					newPlayValues[4] += recorder.getKills(SpriteTemplate.CANNON_BALL)-recorder.getDeaths(SpriteTemplate.CANNON_BALL);//todo get kill ratio instead of kills
+				}
 				this.valueList = addToArray(this.valueList, newPlayValues);
 				//valueArrayList.add(newPlayValues);//add it to the arrayList too
+				
 				updateReward2(testInstance, doBernoulliRewards, isTrainingInstance, verbose);//update rewards to gaussian vectors
+				updateVectorModel();
+				displayReceivedVectorRewards();
+				
 				System.out.println(Arrays.deepToString(valueList));
 
 				//Determine next action
@@ -1580,6 +1646,13 @@ public class LevelSceneTest extends LevelScene{
 
 	}
 	// }
+
+	private void displayReceivedVectorRewards() 
+	{	
+		for (int i = 0; i < rewardList.size();i++)
+		System.out.printf("Vector "+Integer.toString(i)+" : "+Arrays.toString(rewardList.get(i))+"\n");
+		
+	}
 
 	public void save()
 	{

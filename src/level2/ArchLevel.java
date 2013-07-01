@@ -129,12 +129,12 @@ public class ArchLevel extends Level{
 		covdouble[3][3] += 3;
 		covdouble[4][4] += 3;
 		//System.out.println(Arrays.deepToString(cov2.getCovarianceMatrix().getData()));
-		System.out.println(Arrays.deepToString(covdouble));//matrix.getData()));
+		//System.out.println(Arrays.deepToString(covdouble));//matrix.getData()));
 		
 		MultivariateNormalDistribution MND = new MultivariateNormalDistribution(means,covdouble);//cov2.getCovarianceMatrix().getData());
 
 		double[] odds_sample = MND.sample();
-		System.out.println(Arrays.toString(odds_sample));
+		//System.out.println(Arrays.toString(odds_sample));
 		odds[ODDS_STRAIGHT] = (int) odds_sample[ODDS_STRAIGHT];
 		odds[ODDS_HILL_STRAIGHT] = (int) odds_sample[ODDS_HILL_STRAIGHT];
 		odds[ODDS_TUBES] =(int) odds_sample[ODDS_TUBES];

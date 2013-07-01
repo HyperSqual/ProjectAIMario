@@ -1,5 +1,6 @@
 package level2;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import org.apache.commons.math3.distribution.MultivariateNormalDistribution;
@@ -54,36 +55,43 @@ public class TestGaussian {
 				  {4.3,2.1,0.62},
 				  {4.1,2.2,0.63}
 		  };
-		  double [][]covv = {{1,2,3}};
-		  double [][]covplus = addToArray(covv,means);
-		  covplus = addToArray(covplus,means);
-		  covplus = addToArray(covplus,means);
-		  covplus = addToArray(covplus,means);
-		 System.out.println(Arrays.toString(arrayMeans(covplus)));
-		 System.out.println(Arrays.deepToString(covplus));
-		  double [][] meansmeans = {means,means}; 
-		  Covariance cov2 = new Covariance(cov3,false);
-		  RealMatrix matrix = new Array2DRowRealMatrix(cov);
-			
-			//Covariance cov2 = new Covariance(cov);
-			System.out.println("aaaaaaaa");
-			System.out.println(Arrays.deepToString(cov2.getCovarianceMatrix().getData()));
-			double[][] cov2double = cov2.getCovarianceMatrix().getData();
-			cov2double[0][0] = 10;
-			cov2double[1][1] = 10;
-			cov2double[2][2] = 10;
-			
-			
-			System.out.println(Arrays.deepToString(matrix.getData()));
-		  MultivariateNormalDistribution MND = new MultivariateNormalDistribution(means,cov2double);//cov2.getCovarianceMatrix().transpose().getData());//cov2.getCovarianceMatrix().getData());
+//		  double [][]covv = {{1,2,3}};
+//		  double [][]covplus = addToArray(covv,means);
+//		  covplus = addToArray(covplus,means);
+//		  covplus = addToArray(covplus,means);
+//		  covplus = addToArray(covplus,means);
+//		 System.out.println(Arrays.toString(arrayMeans(covplus)));
+//		 System.out.println(Arrays.deepToString(covplus));
+//		  double [][] meansmeans = {means,means}; 
+//		  Covariance cov2 = new Covariance(cov3,false);
+//		  RealMatrix matrix = new Array2DRowRealMatrix(cov);
+//			
+//			//Covariance cov2 = new Covariance(cov);
+//			System.out.println("aaaaaaaa");
+//			System.out.println(Arrays.deepToString(cov2.getCovarianceMatrix().getData()));
+//			double[][] cov2double = cov2.getCovarianceMatrix().getData();
+//			cov2double[0][0] = 10;
+//			cov2double[1][1] = 10;
+//			cov2double[2][2] = 10;
+//			
+//			
+//			System.out.println(Arrays.deepToString(matrix.getData()));
+//		  MultivariateNormalDistribution MND = new MultivariateNormalDistribution(means,cov2double);//cov2.getCovarianceMatrix().transpose().getData());//cov2.getCovarianceMatrix().getData());
+//		  
+//		  System.out.println(Arrays.toString(MND.getStandardDeviations()));
+//		  double[][] kaas = MND.sample(10);
+//		  //double[][] haas =;
+//		  
+//		  System.out.println(Arrays.deepToString(kaas));//MND.getCovariances().getData()));
+//		  System.out.println(cov2.getCovarianceMatrix().toString());
+//		  
 		  
-		  System.out.println(Arrays.toString(MND.getStandardDeviations()));
-		  double[][] kaas = MND.sample(10);
-		  //double[][] haas =;
+		  ArrayList<double[]> valueArrayList = new ArrayList(0);//will contain the playvectors, no doubles
+		  double [] p = {0.1, 0.2 ,0,3};
+		  double [] d = {0.1, 0.2 ,0,3};
+		  valueArrayList.add(p);
+		  System.out.println(valueArrayList.contains(d));
 		  
-		  System.out.println(Arrays.deepToString(kaas));//MND.getCovariances().getData()));
-		  System.out.println(cov2.getCovarianceMatrix().toString());
-		  
-
+		  System.out.println(Arrays.equals(p, d));
     }
 }
